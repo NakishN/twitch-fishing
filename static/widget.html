@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Fishing Widget Overlay</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Special overrides for the widget to ensure absolute transparency and fit */
+        html, body {
+            background-color: transparent !important;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="widget">
+    <div class="widget-container">
+        <!-- The Catch Card (hidden by default, scaled via active class) -->
+        <div id="catch-card" class="catch-card">
+            <!-- Bobber Floating Hook -->
+            <div id="bobber" class="bobber-animation">🎣</div>
+            
+            <!-- Details -->
+            <div id="card-content" style="display: none; animation: slideIn 0.4s ease-out;">
+                <h2>Игрок <span id="player-name" class="catch-user">Viewer</span> вытащил:</h2>
+                
+                <div id="rarity-badge" class="fish-rarity">Обычная рыба</div>
+                
+                <div id="fish-title" class="fish-name">Карась</div>
+                <div id="fish-weight" class="fish-weight">0.45 кг</div>
+                
+                <div id="fish-desc" class="fish-description">
+                    Красивый золотистый карасик. Кот будет очень доволен!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container for dynamic visual effects (splash particles, confetti) -->
+    <div id="effects-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+
+    <script src="widget.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Fishing Leaderboard Widget</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific styling overrides for transparent OBS overlay list */
+        html, body {
+            background-color: transparent !important;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .obs-leaderboard-wrapper {
+            padding: 10px;
+        }
+        
+        .leaderboard-title-text {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.4rem;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.85rem;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            margin-bottom: 0.4rem;
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.3s ease;
+            color: #ffffff;
+        }
+
+        .leaderboard-row:nth-child(1) {
+            border-left: 3px solid #fbbf24;
+            background: rgba(251, 191, 36, 0.12);
+        }
+        .leaderboard-row:nth-child(2) {
+            border-left: 3px solid #9ca3af;
+            background: rgba(156, 163, 175, 0.08);
+        }
+        .leaderboard-row:nth-child(3) {
+            border-left: 3px solid #ea580c;
+            background: rgba(234, 88, 12, 0.06);
+        }
+
+        .rank-col {
+            font-weight: 800;
+            width: 25px;
+            color: var(--text-secondary);
+        }
+        
+        .leaderboard-row:nth-child(1) .rank-col { color: #fbbf24; }
+        .leaderboard-row:nth-child(2) .rank-col { color: #d1d5db; }
+        .leaderboard-row:nth-child(3) .rank-col { color: #ea580c; }
+
+        .name-col {
+            font-weight: 700;
+            flex-grow: 1;
+            padding-left: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .score-col {
+            font-weight: 800;
+            font-family: var(--font-header);
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="obs-leaderboard-wrapper">
+        <div class="obs-leaderboard" style="width: 350px; margin: 0;">
+            <div class="leaderboard-title-text">
+                <span id="leaderboard-type-label">🎣 ТОП РЫБАКОВ</span>
+                <span id="rotation-icon">🏆</span>
+            </div>
+            
+            <div id="leaderboard-rows-container">
+                <!-- Rows will be injected here -->
+                <div style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.9rem;">
+                    Загрузка списка...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="leaderboard.js"></script>
+</body>
+</html>

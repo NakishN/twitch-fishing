@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления Рыбалкой Twitch</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard">
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span>🎣</span>
+                <h1>Twitch Fishing Game</h1>
+            </div>
+            <div class="status-pill">
+                <span>Статус:</span>
+                <div id="status-dot" class="status-dot"></div>
+                <strong id="status-text">Загрузка...</strong>
+            </div>
+        </header>
+
+        <!-- Message Alerts -->
+        <div id="alert-box"></div>
+
+        <div class="dashboard-grid">
+            <!-- Left Column: Controls & Settings -->
+            <div class="col-left">
+                <!-- Status Panel -->
+                <div class="panel">
+                    <h2 class="panel-title">🕹️ Управление игрой</h2>
+                    <div class="switch-container">
+                        <div class="switch-label">
+                            <h3>Активность награды</h3>
+                            <p>Включить/выключить покупку «Рыбалка» на Твиче</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="active-toggle" disabled>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="twitch-connection-status" style="margin-bottom: 1rem;">
+                        <!-- Will be filled by JS -->
+                    </div>
+                    
+                    <a id="twitch-auth-btn" href="/auth/twitch" class="btn btn-twitch" style="display: none;">
+                        🔌 Авторизоваться через Twitch
+                    </a>
+                </div>
+
+                <!-- Settings Panel -->
+                <div class="panel">
+                    <h2 class="panel-title">⚙️ Настройки API</h2>
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label for="client-id">Twitch Client ID</label>
+                            <input type="text" id="client-id" placeholder="Введите Client ID из панели Twitch Dev" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-secret">Twitch Client Secret</label>
+                            <input type="password" id="client-secret" placeholder="••••••••••••••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reward-title">Название награды</label>
+                            <input type="text" id="reward-title" value="Рыбалка 🎣" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reward-cost">Стоимость (баллы канала)</label>
+                            <input type="number" id="reward-cost" value="100" min="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 Сохранить настройки</button>
+                    </form>
+                    
+                    <div style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                        <p><strong>Инструкция:</strong></p>
+                        <ol style="margin-left: 1.25rem;">
+                            <li>Зарегистрируйте приложение на <a href="https://dev.twitch.tv/console/apps" target="_blank" style="color: #a78bfa;">Twitch Developer Console</a>.</li>
+                            <li>В поле <strong>OAuth Redirect URLs</strong> впишите: <code style="color: #f472b6;">http://localhost:3000/auth/callback</code></li>
+                            <li>Скопируйте Client ID и Client Secret в поля выше, сохраните настройки и авторизуйтесь.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- OBS Widgets Links -->
+                <div class="panel">
+                    <h2 class="panel-title">📺 Ссылка для OBS (Браузер)</h2>
+                    
+                    <div class="form-group">
+                        <label>Оверлей оповещений (Catch Widget)</label>
+                        <div class="widget-url-box">
+                            <code id="widget-url">http://localhost:3000/widget.html</code>
+                            <button onclick="copyText('widget-url')" class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;">Копировать</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Виджет таблицы лидеров (Leaderboard Widget)</label>
+                        <div class="widget-url-box">
+                            <code id="leaderboard-url">http://localhost:3000/leaderboard.html</code>
+                            <button onclick="copyText('leaderboard-url')" class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;">Копировать</button>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem;">
+                        Добавьте эти ссылки как «Браузер» (Browser Source) в OBS Studio. Размер оверлея оповещений рекомендуется: 1920x1080 (прозрачный).
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Stats & Log -->
+            <div class="col-right">
+                <!-- Leaderboards -->
+                <div class="panel">
+                    <h2 class="panel-title">🏆 Таблица лидеров</h2>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('by-caught')">По улову (шт)</button>
+                        <button class="tab" onclick="switchTab('by-weight')">По весу (кг)</button>
+                        <button class="tab" onclick="switchTab('by-biggest')">Рекорды (кг)</button>
+                    </div>
+                    
+                    <div id="leaderboard-content">
+                        <!-- Table will be rendered here by JS -->
+                    </div>
+                </div>
+
+                <!-- Catch Log / History -->
+                <div class="panel">
+                    <h2 class="panel-title">📰 Последние уловы</h2>
+                    <div id="history-log" class="history-list">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Лента уловов пуста.</p>
+                    </div>
+                </div>
+
+                <!-- Test / Debug panel -->
+                <div class="panel">
+                    <h2 class="panel-title">🛠️ Тестирование и отладка</h2>
+                    <form id="test-catch-form" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <input type="text" id="test-username" placeholder="Никнейм (логин)" required style="flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: white;">
+                        <input type="text" id="test-displayname" placeholder="Отображаемое имя" required style="flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; color: white;">
+                        <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">🎣 Симулировать</button>
+                    </form>
+                    
+                    <button id="reset-db-btn" class="btn btn-danger">⚠️ Сбросить всю базу данных (статистику)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
