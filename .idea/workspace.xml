@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="88d7c0ac-06ef-4627-9332-489beb117d30" name="Changes" comment="Забыл убрать">
+    <list default="true" id="88d7c0ac-06ef-4627-9332-489beb117d30" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -53,7 +53,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "<unknown>",
+    "git-widget-placeholder": "main",
     "last_opened_file_path": "/home/nwk/Рабочий стол/клауд бесплатно",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -82,6 +82,8 @@
       <workItem from="1782153040035" duration="1671000" />
       <workItem from="1782154793719" duration="123000" />
       <workItem from="1782156612289" duration="458000" />
+      <workItem from="1782157081342" duration="332000" />
+      <workItem from="1782157425843" duration="457000" />
     </task>
     <task id="LOCAL-00001" summary="Забыл убрать">
       <option name="closed" value="true" />
