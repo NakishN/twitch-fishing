@@ -126,6 +126,16 @@
                 <!-- Leaderboards -->
                 <div class="panel">
                     <h2 class="panel-title">🏆 Таблица лидеров</h2>
+                    
+                    <div style="margin-bottom: 1rem; display: flex; gap: 1.5rem; justify-content: center;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                            <input type="radio" name="lb-type" value="session" checked onchange="fetchLeaderboard()"> За стрим
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                            <input type="radio" name="lb-type" value="all_time" onchange="fetchLeaderboard()"> За всё время
+                        </label>
+                    </div>
+
                     <div class="tabs">
                         <button class="tab active" onclick="switchTab('by-caught')">По улову (шт)</button>
                         <button class="tab" onclick="switchTab('by-weight')">По весу (кг)</button>
@@ -154,7 +164,7 @@
                         <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">🎣 Симулировать</button>
                     </form>
                     
-                    <button id="reset-db-btn" class="btn btn-danger">⚠️ Сбросить всю базу данных (статистику)</button>
+                    <button id="reset-db-btn" class="btn btn-danger">⚠️ Начать новый стрим (очистить улов)</button>
                 </div>
             </div>
         </div>

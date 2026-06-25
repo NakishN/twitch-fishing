@@ -212,7 +212,7 @@ function animateCatch(eventData) {
     
     const fishImage = document.getElementById('fish-image');
     if (fishImage) {
-        fishImage.src = `/static/assets/${eventData.fish.rarity}.jpg`;
+        fishImage.src = `assets/${eventData.fish.rarity}.jpg`;
         fishImage.style.display = 'inline-block';
     }
     

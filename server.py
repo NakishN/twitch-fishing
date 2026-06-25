@@ -141,13 +141,21 @@ def save_config(config):
 
 # Database Management
 def load_database():
+    default_db = {"all_time": {"users": {}}, "session": {"users": {}, "history": []}}
     if os.path.exists(DATABASE_FILE):
         try:
             with open(DATABASE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
+                if "all_time" not in data:
+                    # Migrate old DB
+                    return {
+                        "all_time": {"users": data.get("users", {})},
+                        "session": {"users": data.get("users", {}), "history": data.get("history", [])}
+                    }
+                return data
         except Exception as e:
             logger.error(f"Error loading database: {e}")
-    return {"users": {}, "history": []}
+    return default_db
 
 def save_database(db):
     try:
@@ -410,34 +418,34 @@ def choose_catch(roulette_type: str = None):
 
 def register_catch(username, display_name, fish):
     db = load_database()
-    users = db["users"]
     
-    if username not in users:
-        users[username] = {
-            "username": username,
-            "display_name": display_name,
-            "total_fish": 0,
-            "total_weight": 0.0,
-            "biggest_fish": None
-        }
-        
-    user = users[username]
-    user["total_fish"] += 1
-    user["total_weight"] = round(user["total_weight"] + fish["weight"], 2)
-    
-    # Check if this is the biggest fish
-    is_new_biggest = False
-    if not user["biggest_fish"] or fish["weight"] > user["biggest_fish"]["weight"]:
-        is_new_biggest = True
-        user["biggest_fish"] = {
-            "name": fish["name"],
-            "weight": fish["weight"],
-            "rarity": fish["rarity"],
-            "timestamp": datetime.now().isoformat()
-        }
+    def update_user_stats(user_dict):
+        if username not in user_dict:
+            user_dict[username] = {
+                "username": username,
+                "display_name": display_name,
+                "total_fish": 0,
+                "total_weight": 0.0,
+                "biggest_fish": None
+            }
+        user = user_dict[username]
+        user["total_fish"] += 1
+        user["total_weight"] = round(user["total_weight"] + fish["weight"], 2)
+        if not user["biggest_fish"] or fish["weight"] > user["biggest_fish"]["weight"]:
+            user["biggest_fish"] = {
+                "name": fish["name"],
+                "weight": fish["weight"],
+                "rarity": fish["rarity"],
+                "timestamp": datetime.now().isoformat()
+            }
+        return user
+
+    # Update both DB parts
+    all_time_user = update_user_stats(db["all_time"]["users"])
+    session_user = update_user_stats(db["session"]["users"])
         
     # Record to history log
-    history = db.get("history", [])
+    history = db["session"].get("history", [])
     history_entry = {
         "username": username,
         "display_name": display_name,
@@ -449,10 +457,10 @@ def register_catch(username, display_name, fish):
         "timestamp": datetime.now().isoformat()
     }
     history.insert(0, history_entry)
-    db["history"] = history[:100]  # keep last 100 entries
+    db["session"]["history"] = history[:100]  # keep last 100 entries
     
     save_database(db)
-    return user
+    return session_user
 
 # EventSub WebSocket Listener background loop
 eventsub_task_ref = None
@@ -654,9 +662,15 @@ async def post_toggle(payload: ToggleModel):
     return {"status": "ok", "is_active": config["is_active"]}
 
 @app.get("/api/leaderboard")
-def get_leaderboard():
+def get_leaderboard(type: str = "session"):
     db = load_database()
-    users = list(db["users"].values())
+    
+    # fallback if wrong type
+    if type not in ["session", "all_time"]:
+        type = "session"
+        
+    users_data = db[type]["users"] if type in db else {}
+    users = list(users_data.values())
     
     # Sort different leaderboards
     by_caught = sorted(users, key=lambda x: x["total_fish"], reverse=True)[:10]
@@ -690,7 +704,7 @@ def get_leaderboard():
                 "color": FISH_LOOT_TABLE[u["biggest_fish"]["rarity"]]["color"]
             } for u in by_biggest
         ],
-        "history": db.get("history", [])
+        "history": db["session"].get("history", []) if type == "session" else []
     }
 
 class TestCatchModel(BaseModel):
@@ -721,7 +735,9 @@ async def post_test_catch(payload: TestCatchModel):
 
 @app.post("/api/reset-database")
 def post_reset_database():
-    save_database({"users": {}, "history": []})
+    db = load_database()
+    db["session"] = {"users": {}, "history": []}
+    save_database(db)
     return {"status": "ok"}
 
 # Twitch OAuth endpoints

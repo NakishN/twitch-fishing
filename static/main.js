@@ -180,7 +180,10 @@ async function toggleRewardStatus(e) {
 // Fetch leaderboard and history statistics
 async function fetchLeaderboard() {
     try {
-        const response = await fetch('/api/leaderboard');
+        const typeSelect = document.querySelector('input[name="lb-type"]:checked');
+        const lbType = typeSelect ? typeSelect.value : 'session';
+        
+        const response = await fetch(`/api/leaderboard?type=${lbType}`);
         leaderboardData = await response.json();
         
         renderLeaderboard();

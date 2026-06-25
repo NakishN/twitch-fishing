@@ -61,6 +61,14 @@ body.dashboard {
 
 /* OBS Widget Body (Transparent) */
 body.widget {
+    --bg-main: #000000;
+    --bg-panel: #111111;
+    --border-color: #333333;
+    --border-focus: #ffffff;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --shadow-panel: 0 10px 40px rgba(0, 0, 0, 0.8);
+    
     background-color: transparent !important;
     color: var(--text-primary);
     font-family: var(--font-header);

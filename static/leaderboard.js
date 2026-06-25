@@ -67,8 +67,8 @@ function renderLeaderboard() {
         }
         
         // Show fish name in biggest mode
-        const extraDetails = currentMode === 'biggest' 
-            ? `<span style="font-size:0.75rem; color:${item.color || 'var(--text-secondary)'}; margin-left: 0.4rem;">(${item.fish_name})</span>`
+        const extraDetails = currentMode === 'biggest' && item.fish_name
+            ? `<span style="font-size:0.75rem; color:var(--text-secondary); margin-left: 0.4rem;">(${item.fish_name})</span>`
             : '';
             
         return `
