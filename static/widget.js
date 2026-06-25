@@ -206,27 +206,16 @@ function animateCatch(eventData) {
     
     const rarityBadge = document.getElementById('rarity-badge');
     rarityBadge.innerText = eventData.fish.rarity_title;
-    rarityBadge.style.color = eventData.fish.color;
-    rarityBadge.style.borderColor = eventData.fish.color + '40';
-    rarityBadge.style.backgroundColor = eventData.fish.color + '15';
     
     const fishTitle = document.getElementById('fish-title');
     fishTitle.innerText = eventData.fish.name;
-    fishTitle.style.color = eventData.fish.color;
     
-    // Set custom glow styles depending on rarity
-    if (eventData.fish.rarity === 'legendary') {
-        card.style.boxShadow = `0 0 45px ${eventData.fish.color}60`;
-        fishTitle.style.textShadow = `0 0 15px ${eventData.fish.color}`;
-    } else if (eventData.fish.rarity === 'epic' || eventData.fish.rarity === 'rare') {
-        card.style.boxShadow = `0 0 30px ${eventData.fish.color}40`;
-        fishTitle.style.textShadow = 'none';
-    } else {
-        card.style.boxShadow = '0 15px 50px rgba(0, 0, 0, 0.6)';
-        fishTitle.style.textShadow = 'none';
+    const fishImage = document.getElementById('fish-image');
+    if (fishImage) {
+        fishImage.src = `/static/assets/${eventData.fish.rarity}.jpg`;
+        fishImage.style.display = 'inline-block';
     }
     
-    card.style.borderColor = eventData.fish.color;
     document.getElementById('fish-weight').innerText = `${eventData.fish.weight.toFixed(2)} кг`;
     document.getElementById('fish-desc').innerText = eventData.fish.description;
     

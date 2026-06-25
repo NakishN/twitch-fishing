@@ -76,10 +76,10 @@ function updateUIWithStatus() {
     // Set connection status
     if (appStatus.connected) {
         twitchConnStatus.innerHTML = `
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 12px; padding: 1rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                <div>
+            <div style="border: 1px solid var(--color-common); border-radius: 12px; padding: 1rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                     <span style="font-size: 0.85rem; color: var(--text-secondary); display:block;">Канал:</span>
-                    <strong style="font-size: 1.1rem; color: #10b981;">💜 ${appStatus.broadcaster_name}</strong>
+                    <strong style="font-size: 1.1rem;">💜 ${appStatus.broadcaster_name}</strong>
                 </div>
                 <a href="/auth/twitch" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.85rem;">🔌 Сменить аккаунт</a>
             </div>
@@ -88,8 +88,8 @@ function updateUIWithStatus() {
         activeToggle.disabled = false;
     } else {
         twitchConnStatus.innerHTML = `
-            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 12px; padding: 1rem; margin-top: 1rem; color: #ef4444; font-size: 0.9rem;">
-                ⚠️ <strong>Twitch не авторизован!</strong> Сохраните настройки API и авторизуйтесь ниже.
+            <div style="border: 1px solid var(--color-trash); border-radius: 12px; padding: 1rem; margin-top: 1rem; font-size: 0.9rem;">
+                <strong>Отключено:</strong> Требуется авторизация через Twitch для чтения событий.
             </div>
         `;
         twitchAuthBtn.style.display = 'block';
@@ -256,7 +256,7 @@ function renderLeaderboard() {
             scoreVal = `${item.score.toFixed(2)} кг`;
         } else if (currentLeaderboardTab === 'by-biggest') {
             scoreVal = `${item.score.toFixed(2)} кг`;
-            detailsHtml = `<td style="color: ${item.color}; font-weight:600;">${item.fish_name} <span style="font-size:0.75rem; background:rgba(255,255,255,0.05); padding:0.1rem 0.4rem; border-radius:4px; margin-left:0.25rem;">${item.rarity.toUpperCase()}</span></td>`;
+            detailsHtml = `<td style="font-weight:600;">${item.fish_name} <span style="font-size:0.75rem; background:rgba(255,255,255,0.05); padding:0.1rem 0.4rem; border-radius:4px; margin-left:0.25rem;">${item.rarity.toUpperCase()}</span></td>`;
         }
 
         return `
@@ -301,13 +301,13 @@ function renderHistory() {
                         <span style="font-size:0.75rem; color:var(--text-secondary);">${time}</span>
                     </div>
                     <div class="history-fish">
-                        поймал: <strong style="color: ${item.color};">${item.fish_name}</strong>
-                        <span class="rarity-tag" style="background: ${item.color}20; color: ${item.color}; border: 1px solid ${item.color}35;">
+                        поймал: <strong>${item.fish_name}</strong>
+                        <span class="rarity-tag">
                             ${item.rarity_title}
                         </span>
                     </div>
                 </div>
-                <div class="history-weight" style="color: ${item.color};">${item.weight.toFixed(2)} кг</div>
+                <div class="history-weight">${item.weight.toFixed(2)} кг</div>
             </div>
         `;
     }).join('');

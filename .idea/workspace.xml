@@ -27,6 +27,9 @@
     &quot;assignee&quot;: &quot;NakishN&quot;
   }
 }</component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="f9e6f509-530a-49fc-84d0-dac4b33ef326" />
+  </component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/NakishN/twitch-fishing.git&quot;,
@@ -60,7 +63,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -84,6 +87,7 @@
       <workItem from="1782156612289" duration="458000" />
       <workItem from="1782157081342" duration="332000" />
       <workItem from="1782157425843" duration="457000" />
+      <workItem from="1782158379460" duration="1092000" />
     </task>
     <task id="LOCAL-00001" summary="Забыл убрать">
       <option name="closed" value="true" />
