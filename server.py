@@ -3,8 +3,9 @@ import json
 import logging
 import os
 import random
+import uuid
 from datetime import datetime
-from typing import Set
+from typing import Dict, Optional
 
 import requests
 import websockets
@@ -357,67 +358,67 @@ def timeout_user(config, user_id, duration_seconds=600, reason="Поймал р�
         logger.error(f"Failed to timeout user {user_id}: {err_msg}")
         return False
 
-# WebSocket connection pool
-active_connections: Set[WebSocket] = set()
+# WebSocket connection pool: socket -> role announced by the client ("alert", "leaderboard", ...)
+active_connections: Dict[WebSocket, str] = {}
+
+def alert_clients_online():
+    return sum(1 for role in active_connections.values() if role == "alert")
 
 async def broadcast_message(message: dict):
     if not active_connections:
         return
     payload = json.dumps(message, ensure_ascii=False)
     dead_connections = []
-    for ws in active_connections:
+    for ws in list(active_connections):
         try:
             await ws.send_text(payload)
         except Exception:
             dead_connections.append(ws)
             
     for ws in dead_connections:
-        active_connections.remove(ws)
+        active_connections.pop(ws, None)
 
 # Fishing Simulation Logic
-def choose_catch(roulette_type: str = None):
-    if roulette_type and roulette_type in FISH_LOOT_TABLE:
-        selected_rarity = roulette_type
-        rarity_data = FISH_LOOT_TABLE[selected_rarity]
-        item = random.choice(rarity_data["items"])
-        weight = 0.0 # Roulette rewards don't have weight
-    else:
-        rarity_chances = [
-            ("trash", 0.15),
-            ("common", 0.50),
-            ("uncommon", 0.20),
-            ("rare", 0.10),
-            ("epic", 0.04),
-            ("legendary", 0.01)
-        ]
-        
-        r = random.random()
+def choose_catch(rarity: str = None):
+    """Roll a random catch, or pick one from a specific rarity when it is given."""
+    if rarity not in FISH_LOOT_TABLE:
+        roll = random.random()
         cumulative = 0.0
-        selected_rarity = "common"
-        for rarity, chance in rarity_chances:
-            cumulative += chance
-            if r <= cumulative:
-                selected_rarity = rarity
+        rarity = "common"
+        for key, data in FISH_LOOT_TABLE.items():
+            if data["chance"] <= 0:
+                continue
+            cumulative += data["chance"]
+            if roll <= cumulative:
+                rarity = key
                 break
-                
-        rarity_data = FISH_LOOT_TABLE[selected_rarity]
-        item = random.choice(rarity_data["items"])
-        
-        weight = random.uniform(item["min_weight"], item["max_weight"])
-        weight = round(weight, 2)
-    
+
+    rarity_data = FISH_LOOT_TABLE[rarity]
+    item = random.choice(rarity_data["items"])
+    min_weight = item.get("min_weight", 0.0)
+    max_weight = item.get("max_weight", 0.0)
+    # Roulette rewards don't have weight
+    weight = round(random.uniform(min_weight, max_weight), 2) if max_weight else 0.0
+
     return {
         "name": item["name"],
         "weight": weight,
-        "rarity": selected_rarity,
+        "min_weight": min_weight,
+        "max_weight": max_weight,
+        "rarity": rarity,
         "rarity_title": rarity_data["title"],
         "color": rarity_data["color"],
         "description": item["description"],
         "mute_duration": item.get("mute_duration", 0)
     }
 
-def register_catch(username, display_name, fish):
+def register_catch(username, display_name, fish, avatar=None):
     db = load_database()
+
+    # Snapshot records before this catch so the overlay can celebrate new ones
+    previous_best = (db["all_time"]["users"].get(username) or {}).get("biggest_fish")
+    session_weights = [u["biggest_fish"]["weight"] for u in db["session"]["users"].values() if u.get("biggest_fish")]
+    previous_stream_record = max(session_weights) if session_weights else None
     
     def update_user_stats(user_dict):
         if username not in user_dict:
@@ -429,6 +430,9 @@ def register_catch(username, display_name, fish):
                 "biggest_fish": None
             }
         user = user_dict[username]
+        user["display_name"] = display_name
+        if avatar:
+            user["avatar"] = avatar
         user["total_fish"] += 1
         user["total_weight"] = round(user["total_weight"] + fish["weight"], 2)
         if not user["biggest_fish"] or fish["weight"] > user["biggest_fish"]["weight"]:
@@ -460,7 +464,61 @@ def register_catch(username, display_name, fish):
     db["session"]["history"] = history[:100]  # keep last 100 entries
     
     save_database(db)
-    return session_user
+
+    weight = fish["weight"]
+    records = {
+        "personal_best": bool(weight and previous_best and weight > previous_best["weight"]),
+        "previous_personal_best": previous_best["weight"] if previous_best else None,
+        "stream_record": bool(weight and previous_stream_record is not None and weight > previous_stream_record),
+        "previous_stream_record": previous_stream_record
+    }
+    return session_user, records
+
+def build_catch_event(username, display_name, avatar, fish, user_stats, records, preview=False):
+    return {
+        "type": "catch",
+        "id": uuid.uuid4().hex,
+        "preview": preview,
+        "alerts_online": alert_clients_online(),
+        "user": {
+            "username": username,
+            "display_name": display_name,
+            "avatar": avatar
+        },
+        "fish": fish,
+        "stats": {
+            "total_fish": user_stats["total_fish"],
+            "total_weight": user_stats["total_weight"],
+            "biggest_fish_weight": user_stats["biggest_fish"]["weight"] if user_stats["biggest_fish"] else 0.0,
+            "biggest_fish_name": user_stats["biggest_fish"]["name"] if user_stats["biggest_fish"] else ""
+        },
+        "records": records
+    }
+
+# Twitch profile pictures for the overlay, cached per user id / login
+avatar_cache: Dict[str, Optional[str]] = {}
+
+def fetch_avatar(config, user_id=None, login=None):
+    key = user_id or (login or "").lower()
+    if not key or not config.get("access_token") or not config.get("client_id"):
+        return None
+    if key in avatar_cache:
+        return avatar_cache[key]
+
+    query = f"id={user_id}" if user_id else f"login={key}"
+    res = make_twitch_request("GET", f"https://api.twitch.tv/helix/users?{query}", config, timeout=3)
+    if res is None or res.status_code != 200:
+        return None  # don't cache transient failures
+    users = res.json().get("data", [])
+    avatar_cache[key] = users[0].get("profile_image_url") if users else None
+    return avatar_cache[key]
+
+async def get_avatar(config, user_id=None, login=None):
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(fetch_avatar, config, user_id, login), timeout=3.5)
+    except Exception as e:
+        logger.warning(f"Could not fetch avatar for {user_id or login}: {e}")
+        return None
 
 # EventSub WebSocket Listener background loop
 eventsub_task_ref = None
@@ -536,23 +594,13 @@ async def eventsub_websocket_loop():
                                 
                                 # Process game catch
                                 fish = choose_catch()
-                                user_stats = register_catch(username, display_name, fish)
+                                avatar = await get_avatar(config, user_id=event.get("user_id"))
+                                user_stats, records = register_catch(username, display_name, fish, avatar)
                                 
                                 # Broadcast catch to all web widgets
-                                await broadcast_message({
-                                    "type": "catch",
-                                    "user": {
-                                        "username": username,
-                                        "display_name": display_name
-                                    },
-                                    "fish": fish,
-                                    "stats": {
-                                        "total_fish": user_stats["total_fish"],
-                                        "total_weight": user_stats["total_weight"],
-                                        "biggest_fish_weight": user_stats["biggest_fish"]["weight"] if user_stats["biggest_fish"] else 0.0,
-                                        "biggest_fish_name": user_stats["biggest_fish"]["name"] if user_stats["biggest_fish"] else ""
-                                    }
-                                })
+                                await broadcast_message(
+                                    build_catch_event(username, display_name, avatar, fish, user_stats, records)
+                                )
 
                                 # If the fish has a mute duration, timeout the user
                                 if fish.get("mute_duration"):
@@ -678,33 +726,32 @@ def get_leaderboard(type: str = "session"):
     
     users_with_biggest = [u for u in users if u.get("biggest_fish")]
     by_biggest = sorted(users_with_biggest, key=lambda x: x["biggest_fish"]["weight"], reverse=True)[:10]
+
+    def entry(u, score):
+        return {
+            "display_name": u["display_name"],
+            "username": u["username"],
+            "avatar": u.get("avatar"),
+            "total_fish": u["total_fish"],
+            "total_weight": u["total_weight"],
+            "score": score
+        }
+
+    history = db["session"].get("history", [])
     
     return {
-        "by_caught": [
-            {
-                "display_name": u["display_name"],
-                "username": u["username"],
-                "score": u["total_fish"]
-            } for u in by_caught
-        ],
-        "by_weight": [
-            {
-                "display_name": u["display_name"],
-                "username": u["username"],
-                "score": u["total_weight"]
-            } for u in by_weight
-        ],
+        "by_caught": [entry(u, u["total_fish"]) for u in by_caught],
+        "by_weight": [entry(u, u["total_weight"]) for u in by_weight],
         "by_biggest": [
             {
-                "display_name": u["display_name"],
-                "username": u["username"],
-                "score": u["biggest_fish"]["weight"],
+                **entry(u, u["biggest_fish"]["weight"]),
                 "fish_name": u["biggest_fish"]["name"],
                 "rarity": u["biggest_fish"]["rarity"],
                 "color": FISH_LOOT_TABLE[u["biggest_fish"]["rarity"]]["color"]
             } for u in by_biggest
         ],
-        "history": db["session"].get("history", []) if type == "session" else []
+        "history": history if type == "session" else [],
+        "last_catch": history[0] if history else None
     }
 
 class TestCatchModel(BaseModel):
@@ -713,31 +760,52 @@ class TestCatchModel(BaseModel):
 
 @app.post("/api/test-catch")
 async def post_test_catch(payload: TestCatchModel):
+    config = load_config()
     fish = choose_catch()
-    user_stats = register_catch(payload.username, payload.display_name, fish)
+    avatar = await get_avatar(config, login=payload.username)
+    user_stats, records = register_catch(payload.username, payload.display_name, fish, avatar)
     
-    event_data = {
-        "type": "catch",
-        "user": {
-            "username": payload.username,
-            "display_name": payload.display_name
-        },
-        "fish": fish,
-        "stats": {
-            "total_fish": user_stats["total_fish"],
-            "total_weight": user_stats["total_weight"],
-            "biggest_fish_weight": user_stats["biggest_fish"]["weight"] if user_stats["biggest_fish"] else 0.0,
-            "biggest_fish_name": user_stats["biggest_fish"]["name"] if user_stats["biggest_fish"] else ""
-        }
+    event_data = build_catch_event(payload.username, payload.display_name, avatar, fish, user_stats, records)
+    await broadcast_message(event_data)
+    return {"status": "ok", "event": event_data}
+
+class PreviewCatchModel(BaseModel):
+    rarity: Optional[str] = None
+    display_name: Optional[str] = None
+
+@app.post("/api/preview-catch")
+async def post_preview_catch(payload: PreviewCatchModel):
+    """Show a catch on the overlays without touching the statistics."""
+    config = load_config()
+    display_name = payload.display_name or config.get("broadcaster_name") or "Рыбак"
+    username = display_name.lower()
+    fish = choose_catch(payload.rarity)
+    avatar = await get_avatar(config, login=username)
+
+    # Fake but plausible context so every badge can be previewed
+    showcase = fish["rarity"] in ("rare", "epic", "legendary") and fish["weight"] > 0
+    records = {
+        "personal_best": showcase,
+        "previous_personal_best": round(fish["weight"] * 0.62, 2) if showcase else None,
+        "stream_record": fish["rarity"] == "legendary",
+        "previous_stream_record": round(fish["weight"] * 0.4, 2) if fish["rarity"] == "legendary" else None
     }
+    user_stats = {
+        "total_fish": random.randint(1, 12),
+        "total_weight": fish["weight"],
+        "biggest_fish": {"name": fish["name"], "weight": fish["weight"]}
+    }
+
+    event_data = build_catch_event(username, display_name, avatar, fish, user_stats, records, preview=True)
     await broadcast_message(event_data)
     return {"status": "ok", "event": event_data}
 
 @app.post("/api/reset-database")
-def post_reset_database():
+async def post_reset_database():
     db = load_database()
     db["session"] = {"users": {}, "history": []}
     save_database(db)
+    await broadcast_message({"type": "reset"})
     return {"status": "ok"}
 
 # Twitch OAuth endpoints
@@ -823,16 +891,32 @@ def auth_callback(code: str = None, error: str = None):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    active_connections.add(websocket)
+    active_connections[websocket] = "unknown"
     logger.info(f"New client connected. Active: {len(active_connections)}")
     try:
         while True:
-            # Keep connection alive
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_text("pong")
+                continue
+
+            try:
+                message = json.loads(data)
+            except ValueError:
+                continue
+            if not isinstance(message, dict):
+                continue
+
+            if message.get("type") == "hello":
+                active_connections[websocket] = str(message.get("role", "unknown"))
+                logger.info(f"Client identified as '{active_connections[websocket]}'")
+            elif message.get("type") == "revealed":
+                # The alert overlay just showed a catch: let the leaderboard update without spoilers
+                await broadcast_message({"type": "revealed", "id": message.get("id")})
     except WebSocketDisconnect:
-        active_connections.remove(websocket)
+        pass
+    finally:
+        active_connections.pop(websocket, None)
         logger.info(f"Client disconnected. Active: {len(active_connections)}")
 
 @app.on_event("startup")

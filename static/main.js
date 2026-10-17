@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('active-toggle').addEventListener('change', toggleRewardStatus);
     document.getElementById('test-catch-form').addEventListener('submit', triggerTestCatch);
     document.getElementById('reset-db-btn').addEventListener('click', resetDatabase);
+    document.getElementById('preview-buttons').addEventListener('click', (e) => {
+        const button = e.target.closest('.preview-btn');
+        if (button) previewCatch(button.dataset.rarity);
+    });
 });
 
 // Check url query parameters for feedback messages
@@ -384,6 +388,21 @@ async function triggerTestCatch(e) {
     } catch (error) {
         console.error('Error triggering test catch:', error);
         showAlert('Ошибка сети при отладке улова.', 'error');
+    }
+}
+
+// Show a catch of the chosen rarity on the OBS overlays without touching stats
+async function previewCatch(rarity) {
+    try {
+        const response = await fetch('/api/preview-catch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rarity })
+        });
+        if (!response.ok) showAlert('Не удалось запустить предпросмотр.', 'error');
+    } catch (error) {
+        console.error('Error requesting preview:', error);
+        showAlert('Ошибка сети при предпросмотре.', 'error');
     }
 }
 

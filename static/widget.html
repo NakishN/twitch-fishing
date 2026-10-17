@@ -3,50 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBS Fishing Widget Overlay</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Special overrides for the widget to ensure absolute transparency and fit */
-        html, body {
-            background-color: transparent !important;
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-    </style>
+    <title>Рыбалка — оповещение об улове</title>
+    <link rel="stylesheet" href="overlay.css">
+    <link rel="stylesheet" href="widget.css">
 </head>
-<body class="widget">
-    <div class="widget-container">
-        <!-- The Catch Card (hidden by default, scaled via active class) -->
-        <div id="catch-card" class="catch-card">
-            <!-- Bobber Floating Hook -->
-            <div id="bobber" class="bobber-animation">🎣</div>
-            
-            <!-- Details -->
-            <div id="card-content" style="display: none; animation: slideIn 0.4s ease-out;">
-                <h2>Игрок <span id="player-name" class="catch-user">Viewer</span> вытащил:</h2>
-                
-                <div id="rarity-badge" class="fish-rarity">Обычная рыба</div>
-                
-                <div style="text-align: center; margin: 10px 0;">
-                    <img id="fish-image" src="" alt="" style="max-width: 150px; border-radius: 8px; box-shadow: var(--shadow-sm); display: none;">
-                </div>
-                
-                <div id="fish-title" class="fish-name">Карась</div>
-                <div id="fish-weight" class="fish-weight">0.45 кг</div>
-                
-                <div id="fish-desc" class="fish-description">
-                    Красивый золотистый карасик. Кот будет очень доволен!
-                </div>
-            </div>
-        </div>
+<body>
+    <!-- Behind the card: fishing line, water, ripples, glow and rays -->
+    <canvas id="scene-back" class="scene"></canvas>
+
+    <div id="flash" class="flash"></div>
+
+    <div id="cast-label" class="cast-label">
+        <span class="cast-dot"></span>
+        <span id="cast-name" class="cast-name"></span>
+        <span id="cast-text" class="cast-text"></span>
+        <span id="cast-queue" class="cast-queue" hidden></span>
     </div>
 
-    <!-- Container for dynamic visual effects (splash particles, confetti) -->
-    <div id="effects-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+    <div id="rig" class="rig">
+        <article id="card" class="card">
+            <div class="card-edge">
+                <div class="card-body">
+                    <header class="card-top">
+                        <div class="rarity">
+                            <span id="rarity-pips" class="rarity-pips"></span>
+                            <span id="rarity-name" class="rarity-name"></span>
+                        </div>
+                        <span id="catch-no" class="catch-no"></span>
+                    </header>
 
+                    <div class="angler">
+                        <span id="avatar" class="avatar"></span>
+                        <span id="angler-name" class="angler-name"></span>
+                    </div>
+
+                    <h1 id="fish-name" class="fish-name"></h1>
+
+                    <div id="weigh" class="weigh">
+                        <div class="weight">
+                            <span id="weight-value" class="weight-value"></span>
+                            <span id="weight-unit" class="weight-unit"></span>
+                        </div>
+                        <span id="size-class" class="size-class"></span>
+                    </div>
+
+                    <div id="ruler" class="ruler">
+                        <div class="ruler-track">
+                            <div id="ruler-fill" class="ruler-fill"></div>
+                            <div id="ruler-needle" class="ruler-needle"></div>
+                        </div>
+                        <div class="ruler-labels">
+                            <span id="ruler-min"></span>
+                            <span class="ruler-caption">размер для вида</span>
+                            <span id="ruler-max"></span>
+                        </div>
+                    </div>
+
+                    <p id="fish-desc" class="fish-desc"></p>
+
+                    <ul id="badges" class="badges"></ul>
+                </div>
+            </div>
+            <span class="card-line"></span>
+            <span class="grommet"></span>
+        </article>
+    </div>
+
+    <!-- In front of the card: splashes, drips and sparkles -->
+    <canvas id="scene-front" class="scene scene-front"></canvas>
+
+    <script src="overlay.js"></script>
     <script src="widget.js"></script>
 </body>
 </html>

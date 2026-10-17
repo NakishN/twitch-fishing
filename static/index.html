@@ -116,7 +116,11 @@
                         </div>
                     </div>
                     <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem;">
-                        Добавьте эти ссылки как «Браузер» (Browser Source) в OBS Studio. Размер оверлея оповещений рекомендуется: 1920x1080 (прозрачный).
+                        Добавьте ссылки как «Браузер» (Browser Source) в OBS. Оповещения: 1920×1080, таблица лидеров: 420×480. Фон прозрачный, звук можно вести через микшер OBS.
+                    </p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem; line-height: 1.6;">
+                        Настройки в ссылке: оповещения — <code>?x=50&amp;y=9&amp;scale=1&amp;volume=0.7</code> (положение, размер, громкость; <code>sound=0</code> выключает звук, <code>demo=1</code> крутит тестовые уловы для настройки позиции).
+                        Таблица — <code>?period=all_time&amp;rows=5&amp;rotate=15&amp;modes=caught,weight,biggest</code>.
                     </p>
                 </div>
             </div>
@@ -164,6 +168,16 @@
                         <button type="submit" class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;">🎣 Симулировать</button>
                     </form>
                     
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Предпросмотр оповещения (статистика не меняется):</p>
+                    <div id="preview-buttons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1.25rem;">
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="trash" style="padding: 0.5rem;">Хлам</button>
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="common" style="padding: 0.5rem;">Обычная</button>
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="uncommon" style="padding: 0.5rem;">Необычная</button>
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="rare" style="padding: 0.5rem;">Редкая</button>
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="epic" style="padding: 0.5rem;">Эпическая</button>
+                        <button type="button" class="btn btn-secondary preview-btn" data-rarity="legendary" style="padding: 0.5rem;">Легендарная</button>
+                    </div>
+
                     <button id="reset-db-btn" class="btn btn-danger">⚠️ Начать новый стрим (очистить улов)</button>
                 </div>
             </div>
